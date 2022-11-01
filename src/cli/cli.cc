@@ -3,6 +3,7 @@
 #include "templates.hh"
 
 #include <filesystem>
+#include <signal.h>
 
 #ifdef __linux__
 #include <cstring>
@@ -39,6 +40,7 @@ using namespace std::chrono;
 
 String _settings;
 Map settings = {{}};
+Vector<String> pids;
 
 auto start = system_clock::now();
 
@@ -129,10 +131,49 @@ int runApp (const fs::path& path, const String& args, bool headless) {
     }
 
     status = std::system((headlessCommand + prefix + cmd + " " + args + " --from-ssc").c_str());
-  } else if (platform.mac) {
+  } else if (false && platform.mac) {
     auto s = prefix + cmd;
     auto part = s.substr(0, s.find(".app/") + 4);
-    status = std::system(("open -n " + part + " --args " + args + " --from-ssc").c_str());
+    auto hash = std::hash<std::string>{}(s);
+    auto tmpstdout = String(fs::temp_directory_path() / (std::to_string(hash) + ".stdout"));
+    std::system(("rm -f " + tmpstdout).c_str());
+    std::system(("touch " + tmpstdout).c_str());
+    status = std::system(("open -F --stdout " + tmpstdout + " --stderr " + tmpstdout + " -n " + part + " --args " + args + " --from-ssc").c_str());
+    if (WEXITSTATUS(status) == 0) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(32));
+      std::system(("cat " + tmpstdout).c_str());
+      auto result = exec("pgrep -n " + part);
+      auto pid = result.output;
+      pids.push_back(pid);
+      log("pid: "+pid);
+      signal(SIGTERM, [](int signal) {
+          log("SIGINT");
+        for (const auto& pid : pids) {
+          if (pid.size() > 0) {
+          log(pid);
+            try {
+              auto id = std::stoi(pid);
+              if (id) {
+                auto result = ::kill(-id, SIGINT);
+                if (result != 0) {
+                  result = ::kill(-id, SIGTERM);
+                  if (result != 0) {
+                    result = ::kill(-id, SIGKILL);
+                    if (result != 0) {
+                      log("error: Failed to kill child process");
+                    }
+                  }
+                }
+              }
+            } catch (...) {
+              log("error: Something went wrong trying to kill child process");
+            }
+          }
+        }
+      });
+
+      std::system(("tail -f " + tmpstdout).c_str());
+    }
   } else {
     status = std::system((prefix + cmd + " " + args + " --from-ssc").c_str());
   }
