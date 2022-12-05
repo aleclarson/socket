@@ -22,6 +22,7 @@
 #include <wrl.h>
 #pragma comment(lib, "Shlwapi.lib")
 #pragma comment(lib, "Urlmon.lib")
+#pragma comment(lib, "uv.lib")
 #else
 #include <unistd.h>
 #endif
