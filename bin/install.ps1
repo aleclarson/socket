@@ -26,9 +26,9 @@ Function Build {
   if (-not (Test-Path -Path "$WORKING_BUILD_PATH\libuv\build\Release\uv_a.lib" -PathType Leaf)) {
     (New-Item -ItemType Directory -Force -Path "$WORKING_BUILD_PATH\libuv\build") > $null
 
-    Write-Output "# bulding libuv..."
+    Write-Output "# building libuv..."
     cd "$WORKING_BUILD_PATH\libuv\build"
-    (cmake ..) > $null
+    (cmake .. -DBUILD_TESTING=OFF) > $null
 
     cd "$WORKING_BUILD_PATH\libuv"
     (cmake --build "$WORKING_BUILD_PATH\libuv\build" --config Release) > $null
@@ -48,22 +48,22 @@ Function Build {
   cd "$WORKING_PATH"
   (New-Item -ItemType Directory -Force -Path "$WORKING_BUILD_PATH\bin") > $null
   Write-Output "# compiling the build tool..."
-  clang++ src\cli\cli.cc -o $WORKING_BUILD_PATH\bin\ssc.exe -std=c++2a -DSSC_BUILD_TIME="$($BUILD_TIME)" -DSSC_VERSION_HASH="$($VERSION_HASH)" -DSSC_VERSION="$($VERSION)"
-  # -I 'C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0\shared' `
+  clang++ src\process\win.cc src\cli\cli.cc -o $WORKING_BUILD_PATH\bin\ssc.exe -std=c++2a -DSSC_BUILD_TIME="$($BUILD_TIME)" -DSSC_VERSION_HASH="$($VERSION_HASH)" -DSSC_VERSION="$($VERSION)"
+  ## -I 'C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0\shared' `
 
-  if ($? -ne 1) {
-    Write-Output "not ok - the build tool failed to compile. Here's what you can do..."
-    Exit 1
-  }
+  #if ($? -ne 1) {
+  #  Write-Output "not ok - the build tool failed to compile. Here's what you can do..."
+  #  Exit 1
+  #}
 
-  if ($env:Path -notlike "*$BIN_PATH*") {
-    $NEW_PATH = "$BIN_PATH;$env:Path"
-    $env:Path = $NEW_PATH
-    Write-Output "ok - command ssc has been added to the path for the current session."
-    Write-Output ""
-    Write-Output "# consider adding ssc to your path for other sessions:"
-    Write-Output " `$env:Path = ""$BIN_PATH;`$env:Path"""
-    Write-Output ""
+  #if ($env:Path -notlike "*$BIN_PATH*") {
+  #  $NEW_PATH = "$BIN_PATH;$env:Path"
+  #  $env:Path = $NEW_PATH
+  #  Write-Output "ok - command ssc has been added to the path for the current session."
+  #  Write-Output ""
+  #  Write-Output "# consider adding ssc to your path for other sessions:"
+  #  Write-Output " `$env:Path = ""$BIN_PATH;`$env:Path"""
+  #  Write-Output ""
 
     # Dangerous!
     # $REGISTRY = "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment"
@@ -85,7 +85,7 @@ Function Build {
     #   Write-Output " Set-ItemProperty -Path ""$REGISTRY"" -Name path -Value ""$NEW_PATH"""
     #   Write-Output ""
     # }
-  }
+  #}
 }
 
 #
@@ -217,6 +217,6 @@ cd $WORKING_PATH
 
 Install-WebView2
 Build
-Install-Files
+#Install-Files
 
 cd $OLD_CWD

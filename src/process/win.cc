@@ -1,6 +1,7 @@
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
+#include <windows.h>
 #include <tlhelp32.h>
 
 #include "process.hh"

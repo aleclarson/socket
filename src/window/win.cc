@@ -674,6 +674,7 @@ namespace SSC {
     auto options = Microsoft::WRL::Make<CoreWebView2EnvironmentOptions>();
     options->put_AdditionalBrowserArguments(L"--allow-file-access-from-files");
 
+/*
     auto optionsExperimental = Microsoft::WRL::Make<CoreWebView2ExperimentalEnvironmentOptions>();
     if (options.As(&optionsExperimental) == S_OK) {
       auto customSchemeRegistration = Microsoft::WRL::Make<CoreWebView2CustomSchemeRegistration>(L"ipc");
@@ -687,6 +688,7 @@ namespace SSC {
         static_cast<ICoreWebView2ExperimentalCustomSchemeRegistration**>(registrations)
       );
     }
+    */
 
     auto init = [&]() -> HRESULT {
       return CreateCoreWebView2EnvironmentWithOptions(
