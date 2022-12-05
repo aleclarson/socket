@@ -37,7 +37,7 @@ Function Build {
 
   if (-not (Test-Path -Path "$WORKING_BUILD_PATH\lib\uv_a.lib" -PathType Leaf)) {
     (New-Item -ItemType Directory -Force -Path "$WORKING_BUILD_PATH\lib") > $null
-    Copy-Item $WORKING_BUILD_PATH\libuv\build\Release\uv_a.lib -Destination "$WORKING_BUILD_PATH\lib\uv_a.lib"
+    Copy-Item $WORKING_BUILD_PATH\libuv\build\Release\uv.lib -Destination "$WORKING_BUILD_PATH\lib\uv.lib"
   }
 
   if (-not (Test-Path -Path "$WORKING_BUILD_PATH\include\uv.h" -PathType Leaf)) {
@@ -48,7 +48,7 @@ Function Build {
   cd "$WORKING_PATH"
   (New-Item -ItemType Directory -Force -Path "$WORKING_BUILD_PATH\bin") > $null
   Write-Output "# compiling the build tool..."
-  clang++ src\process\win.cc src\cli\cli.cc -o $WORKING_BUILD_PATH\bin\ssc.exe -std=c++2a -DSSC_BUILD_TIME="$($BUILD_TIME)" -DSSC_VERSION_HASH="$($VERSION_HASH)" -DSSC_VERSION="$($VERSION)"
+  clang++ -I"$WORKING_BUILD_PATH\include" -L"$WORKING_BUILD_PATH\lib" src\process\win.cc src\cli\cli.cc -o $WORKING_BUILD_PATH\bin\ssc.exe -std=c++2a -DSSC_BUILD_TIME="$($BUILD_TIME)" -DSSC_VERSION_HASH="$($VERSION_HASH)" -DSSC_VERSION="$($VERSION)"
   ## -I 'C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0\shared' `
 
   #if ($? -ne 1) {
