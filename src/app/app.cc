@@ -206,7 +206,6 @@ namespace SSC {
       "SetWindowCompositionAttribute")
     );
 
-/*
     if (hUxtheme) {
       refreshImmersiveColorPolicyState = GetProcAddress(hUxtheme, MAKEINTRESOURCEA(104));
       shouldSystemUseDarkMode = GetProcAddress(hUxtheme, MAKEINTRESOURCEA(138));
@@ -215,7 +214,6 @@ namespace SSC {
 
     allowDarkModeForApp(shouldSystemUseDarkMode());
     refreshImmersiveColorPolicyState();
-    */
 
     // this fixes bad default quality DPI.
     SetProcessDPIAware();
