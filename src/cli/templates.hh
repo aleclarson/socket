@@ -428,6 +428,7 @@ constexpr auto gXCodeProject = R"ASCII(// !$*UTF8*$!
 		290F7F87276BC2B000486988 /* lib in Resources */ = {isa = PBXBuildFile; fileRef = 290F7F86276BC2B000486988 /* lib */; };
 		29124C5D2761336B001832A0 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 29124C5B2761336B001832A0 /* LaunchScreen.storyboard */; };
 		294A3C852764EAB7007B5B9A /* ui in Resources */ = {isa = PBXBuildFile; fileRef = 294A3C842764EAB7007B5B9A /* ui */; };
+		705CB7202943E47900FB6D20 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 705CB71F2943DF4100FB6D20 /* Assets.xcassets */; };
 		294A3CA02768C429007B5B9A /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 294A3C7B2763EA7F007B5B9A /* WebKit.framework */; };
 		2996EDB22770BC1F00C672A2 /* Network.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2996EDB12770BC1F00C672A2 /* Network.framework */; };
 		2996EDB22770BC1F00C672A3 /* CoreBluetooth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2996EDB12770BC1F00C672A3 /* CoreBluetooth.framework */; };
@@ -445,6 +446,7 @@ constexpr auto gXCodeProject = R"ASCII(// !$*UTF8*$!
 		290F7F86276BC2B000486988 /* lib */ = {isa = PBXFileReference; lastKnownFileType = folder; path = lib; sourceTree = "<group>"; };
 		29124C4A27613369001832A0 /* {{name}}.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "{{name}}.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		29124C5C2761336B001832A0 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		705CB71F2943DF4100FB6D20 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		29124C5E2761336B001832A0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		294A3C792763E9C6007B5B9A /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		294A3C7B2763EA7F007B5B9A /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
@@ -501,6 +503,7 @@ constexpr auto gXCodeProject = R"ASCII(// !$*UTF8*$!
 				294A3C9027677424007B5B9A /* socket.entitlements */,
 				294A3C842764EAB7007B5B9A /* ui */,
 				29124C5B2761336B001832A0 /* LaunchScreen.storyboard */,
+				705CB71F2943DF4100FB6D20 /* Assets.xcassets */,
 				29124C5E2761336B001832A0 /* Info.plist */,
 				29124C4B27613369001832A0 /* Products */,
 				294A3C782763E9C6007B5B9A /* Frameworks */,
@@ -588,8 +591,8 @@ constexpr auto gXCodeProject = R"ASCII(// !$*UTF8*$!
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				290F7F87276BC2B000486988 /* lib in Resources */,
 				29124C5D2761336B001832A0 /* LaunchScreen.storyboard in Resources */,
+				705CB7212943EF9700FB6D20 /* Assets.xcassets in Resources */,
 				294A3C852764EAB7007B5B9A /* ui in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -739,11 +742,10 @@ constexpr auto gXCodeProject = R"ASCII(// !$*UTF8*$!
       isa = XCBuildConfiguration;
       buildSettings = {
         ARCHS = "$(ARCHS_STANDARD)";
-        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
         CODE_SIGN_ENTITLEMENTS = socket.entitlements;
-        CODE_SIGN_IDENTITY = "{{ios_codesign_identity}}";
-        CODE_SIGN_STYLE = Manual;
+        CODE_SIGN_IDENTITY = "Apple Development";
+        CODE_SIGN_STYLE = {{ios_codesign_style}};
         CURRENT_PROJECT_VERSION = 1;
         DEVELOPMENT_TEAM = "{{apple_team_id}}";
         ENABLE_BITCODE = NO;
@@ -789,11 +791,10 @@ constexpr auto gXCodeProject = R"ASCII(// !$*UTF8*$!
       isa = XCBuildConfiguration;
       buildSettings = {
         ARCHS = "$(ARCHS_STANDARD)";
-        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
         CODE_SIGN_ENTITLEMENTS = socket.entitlements;
-        CODE_SIGN_IDENTITY = "iPhone Distribution";
-        CODE_SIGN_STYLE = Manual;
+        CODE_SIGN_IDENTITY = "{{ios_codesign_identity}}";
+        CODE_SIGN_STYLE = {{ios_codesign_style}};
         CURRENT_PROJECT_VERSION = 1;
         DEVELOPMENT_TEAM = "{{apple_team_id}}";
         ENABLE_BITCODE = NO;
@@ -895,8 +896,20 @@ constexpr auto gXCodePlist = R"XML(<?xml version="1.0" encoding="UTF-8"?>
 <dict>
   <key>CFBundleIdentifier</key>
   <string>{{bundle_identifier}}</string>
-  <key>CFBundleIconFile</key>
-  <string>ui/icon.png</string>
+  <key>CFBundleIconName</key>
+  <string>App Icon</string>
+  <key>CFBundleIcons</key>
+  <dict>
+    <key>CFBundlePrimaryIcon</key>
+    <dict>
+      <key>CFBundleIconFiles</key>
+      <array>
+        <string>App Icon</string>
+      </array>
+      <key>UIPrerenderedIcon</key>
+      <false/>
+    </dict>
+  </dict>
   <key>NSAppTransportSecurity</key>
   <dict>
     <key>NSAllowsArbitraryLoads</key>
@@ -928,11 +941,6 @@ constexpr auto gXCodePlist = R"XML(<?xml version="1.0" encoding="UTF-8"?>
   <key>LSApplicationQueriesSchemes</key>
   <array>
     <string>{{ios_protocol}}</string>
-  </array>
-  <key>UIBackgroundModes</key>
-  <array>
-    <string>fetch</string>
-    <string>processing</string>
   </array>
 </dict>
 </plist>)XML";

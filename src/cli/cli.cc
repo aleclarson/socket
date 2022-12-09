@@ -1348,75 +1348,105 @@ int main (const int argc, const char* argv[]) {
     if (platform.mac && flagBuildForIOS) {
       fs::remove_all(paths.platformSpecificOutputPath);
 
+      if (settings.count("ios_asset_catalog") == 0) {
+        settings["ios_asset_catalog"] = "Assets.xcassets";
+      }
+      if (settings.count("ios_codesign_style") == 0) {
+        settings["ios_codesign_style"] = "Manual";
+      }
+      if (settings.count("ios_codesign_identity") == 0) {
+        settings["ios_codesign_identity"] = "Apple Distribution";
+      }
+      if (settings.count("ios_protocol") == 0) {
+        settings["ios_protocol"] = "https";
+      }
+      if (settings.count("copyright") == 0) {
+        settings["copyright"] = "";
+      }
+
       auto projectName = (settings["name"] + ".xcodeproj");
       auto schemeName = (settings["name"] + ".xcscheme");
       auto pathToProject = paths.platformSpecificOutputPath / projectName;
       auto pathToScheme = pathToProject / "xcshareddata" / "xcschemes";
       auto pathToProfile = targetPath / settings["ios_provisioning_profile"];
+      auto pathToAssetCatalog = targetPath / settings["ios_asset_catalog"];
 
       fs::create_directories(pathToProject);
       fs::create_directories(pathToScheme);
 
       if (!flagBuildForSimulator) {
-        if (!fs::exists(pathToProfile)) {
-          log("provisioning profile not found: " + pathToProfile.string() + ". " +
-              "Please specify a valid provisioning profile in the " +
-              "ios_provisioning_profile field in your socket.ini");
-          exit(1);
+        if (settings["ios_codesign_style"] == "Manual") {
+          if (!fs::exists(pathToProfile)) {
+            log("provisioning profile not found: " + pathToProfile.string() + ". " +
+                "Please specify a valid provisioning profile in the " +
+                "ios_provisioning_profile field in your socket.ini");
+            exit(1);
+          }
+          String command = (
+            "security cms -D -i " + pathToProfile.string()
+          );
+
+          auto r = exec(command);
+          std::regex reUuid(R"(<key>UUID<\/key>\n\s*<string>(.*)<\/string>)");
+          std::smatch matchUuid;
+
+          if (!std::regex_search(r.output, matchUuid, reUuid)) {
+            log("failed to extract uuid from provisioning profile using \"" + command + "\"");
+            exit(1);
+          }
+
+          String uuid = matchUuid.str(1);
+
+          std::regex reProvSpec(R"(<key>Name<\/key>\n\s*<string>(.*)<\/string>)");
+          std::smatch matchProvSpec;
+
+          if (!std::regex_search(r.output, matchProvSpec, reProvSpec)) {
+            log("failed to extract Provisioning Specifier from provisioning profile using \"" + command + "\"");
+            exit(1);
+          }
+
+          String provSpec = matchProvSpec.str(1);
+
+          std::regex reTeamId(R"(<key>com\.apple\.developer\.team-identifier<\/key>\n\s*<string>(.*)<\/string>)");
+          std::smatch matchTeamId;
+
+          if (!std::regex_search(r.output, matchTeamId, reTeamId)) {
+            log("failed to extract Team Id from provisioning profile using \"" + command + "\"");
+            exit(1);
+          }
+
+          String team = matchTeamId.str(1);
+
+          auto pathToInstalledProfile = fs::path(getEnv("HOME")) /
+            "Library" /
+            "MobileDevice" /
+            "Provisioning Profiles" /
+            (uuid + ".mobileprovision");
+
+          if (!fs::exists(pathToInstalledProfile)) {
+            fs::copy(pathToProfile, pathToInstalledProfile);
+          }
+
+          settings["ios_provisioning_specifier"] = provSpec;
+          settings["ios_provisioning_profile"] = uuid;
+          settings["apple_team_id"] = team;
         }
-        String command = (
-          "security cms -D -i " + pathToProfile.string()
-        );
-
-        auto r = exec(command);
-        std::regex reUuid(R"(<key>UUID<\/key>\n\s*<string>(.*)<\/string>)");
-        std::smatch matchUuid;
-
-        if (!std::regex_search(r.output, matchUuid, reUuid)) {
-          log("failed to extract uuid from provisioning profile using \"" + command + "\"");
-          exit(1);
+        if (fs::exists(pathToAssetCatalog)) {
+          fs::copy(
+            pathToAssetCatalog,
+            paths.platformSpecificOutputPath / "Assets.xcassets",
+            fs::copy_options::overwrite_existing | fs::copy_options::recursive
+          );
         }
-
-        String uuid = matchUuid.str(1);
-
-        std::regex reProvSpec(R"(<key>Name<\/key>\n\s*<string>(.*)<\/string>)");
-        std::smatch matchProvSpec;
-
-        if (!std::regex_search(r.output, matchProvSpec, reProvSpec)) {
-          log("failed to extract Provisioning Specifier from provisioning profile using \"" + command + "\"");
-          exit(1);
-        }
-
-        String provSpec = matchProvSpec.str(1);
-
-        std::regex reTeamId(R"(<key>com\.apple\.developer\.team-identifier<\/key>\n\s*<string>(.*)<\/string>)");
-        std::smatch matchTeamId;
-
-        if (!std::regex_search(r.output, matchTeamId, reTeamId)) {
-          log("failed to extract Team Id from provisioning profile using \"" + command + "\"");
-          exit(1);
-        }
-
-        String team = matchTeamId.str(1);
-
-        auto pathToInstalledProfile = fs::path(getEnv("HOME")) /
-          "Library" /
-          "MobileDevice" /
-          "Provisioning Profiles" /
-          (uuid + ".mobileprovision");
-
-        if (!fs::exists(pathToInstalledProfile)) {
-          fs::copy(pathToProfile, pathToInstalledProfile);
-        }
-
-        settings["ios_provisioning_specifier"] = provSpec;
-        settings["ios_provisioning_profile"] = uuid;
-        settings["apple_team_id"] = team;
       }
-      if (flagBuildForSimulator) {
+
+      if (settings.count("ios_provisioning_specifier") == 0) {
         settings["ios_provisioning_specifier"] = "";
+      }
+      if (settings.count("ios_provisioning_profile") == 0) {
         settings["ios_provisioning_profile"] = "";
-        settings["ios_codesign_identity"] = "";
+      }
+      if (settings.count("apple_team_id") == 0) {
         settings["apple_team_id"] = "";
       }
 
@@ -1711,7 +1741,7 @@ int main (const int argc, const char* argv[]) {
       String deviceType;
 
       if (settings["ios_codesign_identity"].size() == 0) {
-        settings["ios_codesign_identity"] = "iPhone Distribution";
+        settings["ios_codesign_identity"] = "Apple Distribution";
       }
 
       auto sup = String("archive");
