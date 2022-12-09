@@ -20,6 +20,15 @@ static dispatch_queue_t queue = dispatch_queue_create(
   qos
 );
 
+@interface InputAccessoryHackHelper : NSObject
+@end
+
+@implementation InputAccessoryHackHelper
+- (id) inputAccessoryView {
+  return nil;
+}
+@end
+
 @interface AppDelegate : UIResponder <
   UIApplicationDelegate,
   WKScriptMessageHandler,
@@ -301,6 +310,8 @@ void SSCSwapInstanceMethodWithBlock(Class cls, SEL original, id replacementBlock
     [self.webview loadFileURL: url
       allowingReadAccessToURL: [NSURL fileURLWithPath:allowed]];
   }
+
+  [self removeKeyboardInputAccessoryView:self.webview];
 }
 
 - (void)listenForKeyDown
@@ -340,6 +351,57 @@ void SSCSwapInstanceMethodWithBlock(Class cls, SEL original, id replacementBlock
 
       return ((BOOL (*)(id, SEL, id))objc_msgSend)(app, swizzledKeyEventSelector, event);
   }, swizzledKeyEventSelector);
+}
+
+- (void)removeKeyboardInputAccessoryView:(WKWebView*)webview
+{
+  __block UIView *target;
+  [[webview.scrollView subviews]
+      enumerateObjectsUsingBlock:^(__kindof UIView *_Nonnull obj,
+                                   NSUInteger idx, BOOL *_Nonnull stop) {
+        *stop = [[NSString stringWithFormat:@"%@", [obj class]]
+            hasPrefix:@"WKContent"];
+        if (stop) {
+          target = obj;
+        }
+      }];
+
+  Class superclass = [target superclass];
+  if (!target || !superclass) {
+    return;
+  }
+
+  NSString *noInputAccessoryViewClassName =
+      [NSString stringWithFormat:@"%@_NoInputAccessoryView", superclass];
+
+  Class newClass = NSClassFromString(noInputAccessoryViewClassName);
+  if (!newClass) {
+    Class targetClass = [target class];
+    const char *classNameCString = [noInputAccessoryViewClassName
+        cStringUsingEncoding:NSASCIIStringEncoding];
+
+    newClass = objc_allocateClassPair(targetClass, classNameCString, 0);
+    if (newClass) {
+      objc_registerClassPair(newClass);
+    }
+  }
+
+  if (!newClass) {
+    return;
+  }
+
+  SEL originalMethodSelector = @selector(inputAccessoryView);
+  Method originalMethod = class_getInstanceMethod(
+      [InputAccessoryHackHelper class], originalMethodSelector);
+
+  if (!originalMethod) {
+    return;
+  }
+
+  class_addMethod(newClass, originalMethodSelector,
+                  method_getImplementation(originalMethod),
+                  method_getTypeEncoding(originalMethod));
+  object_setClass(target, newClass);
 }
 
 @end
