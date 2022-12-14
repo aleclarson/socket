@@ -754,17 +754,6 @@ constexpr auto gXCodeProject = R"ASCII(// !$*UTF8*$!
         GENERATE_INFOPLIST_FILE = YES;
         HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/include";
         INFOPLIST_FILE = Info.plist;
-        INFOPLIST_KEY_CFBundleDisplayName = "{{name}}";
-        INFOPLIST_KEY_LSApplicationCategoryType = Developer;
-        INFOPLIST_KEY_NSCameraUsageDescription = "This app needs access to the camera";
-        INFOPLIST_KEY_NSHumanReadableCopyright = "{{copyright}}";
-        INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app needs access to the microphone";
-        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-        INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-        INFOPLIST_KEY_UIRequiresFullScreen = YES;
-        INFOPLIST_KEY_UIStatusBarHidden = YES;
-        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
         LD_RUNPATH_SEARCH_PATHS = (
           "$(inherited)",
           "@executable_path/Frameworks",
@@ -805,17 +794,6 @@ constexpr auto gXCodeProject = R"ASCII(// !$*UTF8*$!
         GENERATE_INFOPLIST_FILE = YES;
         HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/include";
         INFOPLIST_FILE = Info.plist;
-        INFOPLIST_KEY_CFBundleDisplayName = "{{name}}";
-        INFOPLIST_KEY_LSApplicationCategoryType = Developer;
-        INFOPLIST_KEY_NSCameraUsageDescription = "This app needs access to the camera";
-        INFOPLIST_KEY_NSHumanReadableCopyright = "{{copyright}}";
-        INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app needs access to the microphone";
-        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-        INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-        INFOPLIST_KEY_UIRequiresFullScreen = YES;
-        INFOPLIST_KEY_UIStatusBarHidden = YES;
-        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
         LD_RUNPATH_SEARCH_PATHS = (
           "$(inherited)",
           "@executable_path/Frameworks",
@@ -898,6 +876,8 @@ constexpr auto gXCodePlist = R"XML(<?xml version="1.0" encoding="UTF-8"?>
 <dict>
   <key>CFBundleIdentifier</key>
   <string>{{bundle_identifier}}</string>
+  <key>CFBundleDisplayName</key>
+  <string>{{name}}</string>
   <key>CFBundleIconName</key>
   <string>App Icon</string>
   <key>CFBundleIcons</key>
@@ -912,6 +892,14 @@ constexpr auto gXCodePlist = R"XML(<?xml version="1.0" encoding="UTF-8"?>
       <false/>
     </dict>
   </dict>
+  <key>LSApplicationCategoryType</key>
+  <string>Developer</string>
+  <key>NSHumanReadableCopyright</key>
+  <string>{{copyright}}</string>
+  <key>UILaunchStoryboardName</key>
+  <string>LaunchScreen</string>
+  <key>UIApplicationSupportsIndirectInputEvents</key>
+  <true/>
   <key>NSAppTransportSecurity</key>
   <dict>
     <key>NSAllowsArbitraryLoads</key>
@@ -919,16 +907,37 @@ constexpr auto gXCodePlist = R"XML(<?xml version="1.0" encoding="UTF-8"?>
   </dict>
   <key>NSHighResolutionCapable</key>
   <true/>
+  <key>NSSupportsAutomaticGraphicsSwitching</key>
+  <true/>
+  <key>NSRequiresAquaSystemAppearance</key>
+  <false/>
   <key>NSLocalNetworkUsageDescription</key>
   <string>The app would like to discover and connect to peers</string>
   <key>NSBluetoothAlwaysUsageDescription</key>
   <string>The app would like to discover and connect to peers</string>
   <key>NSBluetoothPeripheralUsageDescription</key>
   <string>The app would like to discover and connect to peers</string>
-  <key>NSRequiresAquaSystemAppearance</key>
-  <false/>
-  <key>NSSupportsAutomaticGraphicsSwitching</key>
+  <key>NSCameraUsageDescription</key>
+  <string>This app needs access to the camera</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>This app needs access to the microphone</string>
+  <key>UIRequiresFullScreen</key>
   <true/>
+  <key>UIStatusBarHidden</key>
+  <true/>
+  <key>UISupportedInterfaceOrientations~ipad</key>
+  <array>
+    <string>UIInterfaceOrientationPortrait</string>
+    <string>UIInterfaceOrientationPortraitUpsideDown</string>
+    <string>UIInterfaceOrientationLandscapeLeft</string>
+    <string>UIInterfaceOrientationLandscapeRight</string>
+  </array>
+  <key>UISupportedInterfaceOrientations</key>
+  <array>
+    <string>UIInterfaceOrientationPortrait</string>
+    <string>UIInterfaceOrientationLandscapeLeft</string>
+    <string>UIInterfaceOrientationLandscapeRight</string>
+  </array>
   <key>CFBundleURLTypes</key>
   <array>
     <dict>
