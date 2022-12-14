@@ -592,7 +592,7 @@ constexpr auto gXCodeProject = R"ASCII(// !$*UTF8*$!
 			buildActionMask = 2147483647;
 			files = (
 				29124C5D2761336B001832A0 /* LaunchScreen.storyboard in Resources */,
-				705CB7212943EF9700FB6D20 /* Assets.xcassets in Resources */,
+				705CB7202943E47900FB6D20 /* Assets.xcassets in Resources */,
 				294A3C852764EAB7007B5B9A /* ui in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
