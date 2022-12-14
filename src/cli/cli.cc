@@ -599,6 +599,7 @@ int main (const int argc, const char* argv[]) {
 
         if (flagDebugMode) {
           settings["apple_instruments"] = "true";
+          settings["bundle_identifier"] += ".dev";
           suffix += "-dev";
         } else {
           settings["apple_instruments"] = "false";
