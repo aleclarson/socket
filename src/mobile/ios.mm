@@ -1,5 +1,6 @@
 #include <objc/runtime.h>
 #include <objc/message.h>
+#include <os/log.h>
 #include "../core/core.hh"
 #include "../ipc/ipc.hh"
 #include "../window/window.hh"
@@ -26,6 +27,114 @@ static dispatch_queue_t queue = dispatch_queue_create(
 @implementation InputAccessoryHackHelper
 - (id) inputAccessoryView {
   return nil;
+}
+@end
+
+@interface CorsDisablingURLSchemeHandler : NSObject <WKURLSchemeHandler, NSURLSessionTaskDelegate>
+@property (nonatomic, strong) NSMutableDictionary<NSURLSessionTask *, id<WKURLSchemeTask>> *schemeTasks;
+@property (nonatomic, strong) NSMutableDictionary<NSValue *, NSURLSessionDataTask *> *dataTasks;
+@end
+
+@implementation CorsDisablingURLSchemeHandler
+- (instancetype)init {
+  self = [super init];
+  if (self) {
+    self.schemeTasks = [NSMutableDictionary dictionary];
+    self.dataTasks = [NSMutableDictionary dictionary];
+  }
+  return self;
+}
+- (void) webView: (WKWebView*) webView startURLSchemeTask: (id<WKURLSchemeTask>) schemeTask {
+  NSURL *url = schemeTask.request.URL;
+  url = [NSURL URLWithString:[url.absoluteString substringFromIndex:5]];
+
+  NSMutableURLRequest *request = [schemeTask.request mutableCopy];
+  request.URL = url;
+
+  // Rewrite X-Origin, X-Referer, and X-Cookie headers to Origin, Referer, and Cookie.
+  NSDictionary *headers = request.allHTTPHeaderFields;
+  if (headers[@"X-Origin"] != nil) {
+    [request setValue:headers[@"X-Origin"] forHTTPHeaderField:@"Origin"];
+    [request setValue:nil forHTTPHeaderField:@"X-Origin"];
+  }
+  if (headers[@"X-Referer"] != nil) {
+    [request setValue:headers[@"X-Referer"] forHTTPHeaderField:@"Referer"];
+    [request setValue:nil forHTTPHeaderField:@"X-Referer"];
+  }
+  if (headers[@"X-Cookie"] != nil) {
+    [request setValue:headers[@"X-Cookie"] forHTTPHeaderField:@"Cookie"];
+    [request setValue:nil forHTTPHeaderField:@"X-Cookie"];
+  }
+
+  os_log(OS_LOG_DEFAULT, "Request: %@ %@", request, request.allHTTPHeaderFields);
+  dispatch_async(queue, ^{
+    NSURLSessionDataTask *dataTask = [[NSURLSession sharedSession] dataTaskWithRequest:request];
+    [self.schemeTasks setObject:schemeTask forKey:dataTask];
+    [self.dataTasks setObject:dataTask forKey:[NSValue valueWithPointer:schemeTask]];
+    [dataTask setDelegate:self];
+    [dataTask resume];
+  });
+}
+- (void) webView: (WKWebView*) webView stopURLSchemeTask: (id<WKURLSchemeTask>) schemeTask {
+  NSValue *schemeTaskKey = [NSValue valueWithPointer:schemeTask];
+  NSURLSessionDataTask *dataTask = [_dataTasks objectForKey:schemeTaskKey];
+  if (dataTask == nil) {
+    return;
+  }
+  [_dataTasks removeObjectForKey:schemeTaskKey];
+  [_schemeTasks removeObjectForKey:dataTask];
+  [dataTask cancel];
+}
+- (void)URLSession:(NSURLSession *)session
+              dataTask:(NSURLSessionDataTask *)dataTask
+    didReceiveResponse:(NSURLResponse *)response
+     completionHandler:
+         (void (^)(NSURLSessionResponseDisposition))completionHandler {
+  id<WKURLSchemeTask> schemeTask = [_schemeTasks objectForKey:dataTask];
+  if (schemeTask == nil) {
+    completionHandler(NSURLSessionResponseCancel);
+    return;
+  }
+
+  // Set Access-Control-Allow-Origin response header.
+  NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
+  NSMutableDictionary *headers = [httpResponse.allHeaderFields mutableCopy];
+  [headers setValue:@"*" forKey:@"Access-Control-Allow-Origin"];
+  httpResponse = [[NSHTTPURLResponse alloc] initWithURL:httpResponse.URL
+                                             statusCode:httpResponse.statusCode
+                                            HTTPVersion:@"HTTP/1.1"
+                                           headerFields:headers];
+
+  os_log(OS_LOG_DEFAULT, "Response: %@", httpResponse);
+  [schemeTask didReceiveResponse:httpResponse];
+
+  completionHandler(NSURLSessionResponseAllow);
+}
+- (void)URLSession:(NSURLSession *)session
+          dataTask:(NSURLSessionDataTask *)dataTask
+    didReceiveData:(NSData *)data {
+  id<WKURLSchemeTask> schemeTask = [_schemeTasks objectForKey:dataTask];
+  if (schemeTask == nil) {
+    return;
+  }
+  [schemeTask didReceiveData:data];
+}
+- (void)URLSession:(NSURLSession *)session
+                    task:(NSURLSessionTask *)dataTask
+    didCompleteWithError:(NSError *)error {
+  id<WKURLSchemeTask> schemeTask = [_schemeTasks objectForKey:dataTask];
+  if (schemeTask == nil) {
+    return;
+  }
+  [_dataTasks removeObjectForKey:[NSValue valueWithPointer:schemeTask]];
+  [_schemeTasks removeObjectForKey:dataTask];
+  if (error == nil) {
+    os_log(OS_LOG_DEFAULT, "Success");
+    [schemeTask didFinish];
+  } else {
+    os_log(OS_LOG_DEFAULT, "Error: %@", error);
+    [schemeTask didFailWithError:error];
+  }
 }
 @end
 
@@ -267,6 +376,8 @@ void SSCSwapInstanceMethodWithBlock(Class cls, SEL original, id replacementBlock
 
   WKWebViewConfiguration *config = [[WKWebViewConfiguration alloc] init];
 
+  [config setURLSchemeHandler: [CorsDisablingURLSchemeHandler new] forURLScheme: @"cors-http"];
+  [config setURLSchemeHandler: [CorsDisablingURLSchemeHandler new] forURLScheme: @"cors-https"];
   [config setURLSchemeHandler: bridge->router.schemeHandler
                  forURLScheme: @"ipc"];
 
