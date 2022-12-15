@@ -938,6 +938,11 @@ constexpr auto gXCodePlist = R"XML(<?xml version="1.0" encoding="UTF-8"?>
     <string>UIInterfaceOrientationLandscapeLeft</string>
     <string>UIInterfaceOrientationLandscapeRight</string>
   </array>
+  <key>UIBackgroundModes</key>
+  <array>
+    <string>fetch</string>
+    <string>processing</string>
+  </array>
   <key>CFBundleURLTypes</key>
   <array>
     <dict>
