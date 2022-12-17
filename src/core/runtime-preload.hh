@@ -10,6 +10,7 @@ namespace SSC {
 
     auto preload = SSC::String(
       "\n;(() => {                                                               \n"
+      "  window.ping = () => webkit.messageHandlers.pong.postMessage({});        \n"
       "  window.__args = {}                                                      \n"
       "  Object.defineProperties(window.__args, {                                \n"
       "  arch: {                                                                 \n"

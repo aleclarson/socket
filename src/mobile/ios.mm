@@ -149,6 +149,9 @@ static dispatch_queue_t queue = dispatch_queue_create(
 @property (strong, nonatomic) SSCNavigationDelegate* navDelegate;
 @property (strong, nonatomic) SSCBridgedWebView* webview;
 @property (strong, nonatomic) WKUserContentController* content;
+@property (strong, nonatomic) NSTimer* pongTimeout;
+@property (strong, nonatomic) NSTimer* pingInterval;
+@property (nonatomic) BOOL pongAlertVisible;
 @end
 
 //
@@ -191,6 +194,12 @@ static dispatch_queue_t queue = dispatch_queue_create(
 - (void) userContentController: (WKUserContentController*) userContentController
        didReceiveScriptMessage: (WKScriptMessage*) scriptMessage
 {
+  if ([scriptMessage.name isEqualToString:@"pong"]) {
+    // NSLog(@"pong");
+    [_pongTimeout invalidate];
+    return;
+  }
+
   id body = [scriptMessage body];
 
   if (![body isKindOfClass:[NSString class]]) {
@@ -309,7 +318,6 @@ static dispatch_queue_t queue = dispatch_queue_create(
   [ns addObserver: self selector: @selector(keyboardWillHide) name: UIKeyboardWillHideNotification object: nil];
   [ns addObserver: self selector: @selector(keyboardWillChange:) name: UIKeyboardWillChangeFrameNotification object: nil];
 
-  [self listenForKeyDown];
   [self setUpWebView];
   [self.window makeKeyAndVisible];
 
@@ -318,6 +326,8 @@ static dispatch_queue_t queue = dispatch_queue_create(
 
 - (void)setUpWebView
 {
+  [self.pingInterval invalidate];
+  [self.pongTimeout invalidate];
   [self.content removeAllUserScripts];
   self.webview.navigationDelegate = nil;
   self.webview.scrollView.delegate = nil;
@@ -369,6 +379,7 @@ static dispatch_queue_t queue = dispatch_queue_create(
 
   self.content = [config userContentController];
 
+  [self.content addScriptMessageHandler:self name: @"pong"];
   [self.content addScriptMessageHandler:self name: @"external"];
   [self.content addUserScript: initScript];
 
@@ -409,6 +420,62 @@ static dispatch_queue_t queue = dispatch_queue_create(
   }
 
   [self removeKeyboardInputAccessoryView:self.webview];
+
+  if (isDebugEnabled()) {
+    self.pingInterval = [NSTimer scheduledTimerWithTimeInterval:5.0
+                                                        target:self
+                                                      selector:@selector(ping)
+                                                      userInfo:nil
+                                                        repeats:YES];
+  }
+}
+
+- (void)ping
+{
+  if (self.pongAlertVisible) {
+    return;
+  }
+  self.pongTimeout = [NSTimer scheduledTimerWithTimeInterval:2.0
+                                                      target:self
+                                                    selector:@selector(webViewBecameUnresponsive)
+                                                    userInfo:nil
+                                                     repeats:NO];
+
+  // NSLog(@"ping");
+  [self.webview evaluateJavaScript:@"window.ping()" completionHandler:nil];
+}
+
+- (void)webViewBecameUnresponsive
+{
+  self.pongAlertVisible = YES;
+
+  UIAlertController *alert = [UIAlertController
+      alertControllerWithTitle:@"Error"
+                       message:@"The web view is unresponsive. Should I reload "
+                               @"it for you?"
+                preferredStyle:UIAlertControllerStyleAlert];
+
+  UIAlertAction *reloadAction =
+      [UIAlertAction actionWithTitle:@"Reload"
+                               style:UIAlertActionStyleDefault
+                             handler:^(UIAlertAction *_Nonnull action) {
+                               [self setPongAlertVisible:NO];
+                               [self setUpWebView];
+                             }];
+
+  UIAlertAction *cancelAction =
+      [UIAlertAction actionWithTitle:@"Cancel"
+                               style:UIAlertActionStyleCancel
+                             handler:^(UIAlertAction *_Nonnull action) {
+                               [self setPongAlertVisible:NO];
+                             }];
+
+  [alert addAction:reloadAction];
+  [alert addAction:cancelAction];
+
+  [self.window.rootViewController presentViewController:alert
+                                               animated:YES
+                                             completion:nil];
 }
 
 - (void)removeKeyboardInputAccessoryView:(WKWebView*)webview
