@@ -316,6 +316,13 @@ static dispatch_queue_t queue = dispatch_queue_create(
   return YES;
 }
 
+- (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView
+{
+  if (webView == self.webview) {
+    [self setUpWebView];
+  }
+}
+
 - (void)setUpWebView
 {
   [self.pingInterval invalidate];

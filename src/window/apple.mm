@@ -14,6 +14,21 @@
     decisionHandler(WKNavigationActionPolicyAllow);
   }
 }
+- (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView
+{
+#if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
+  id<UIApplicationDelegate> appDelegate = [UIApplication sharedApplication].delegate;
+#else
+  id<NSApplicationDelegate> appDelegate = [NSApplication sharedApplication].delegate;
+#endif
+
+  if ([appDelegate respondsToSelector:@selector(webViewWebContentProcessDidTerminate:)]) {
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wobjc-method-access"
+    [appDelegate webViewWebContentProcessDidTerminate:webView];
+    #pragma clang diagnostic pop
+  }
+}
 @end
 
 #if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
