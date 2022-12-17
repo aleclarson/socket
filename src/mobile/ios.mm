@@ -408,9 +408,7 @@ static dispatch_queue_t queue = dispatch_queue_create(
       URLWithString: [NSString stringWithFormat: @"http://%@:%d/", host, port]
     ];
 
-    [self.webview loadFileRequest: [NSURLRequest requestWithURL: url]
-          allowingReadAccessToURL: [NSURL fileURLWithPath: allowed]
-    ];
+    [self.webview loadRequest: [NSURLRequest requestWithURL: url]];
   } else {
     url = [NSURL
       fileURLWithPath: [allowed stringByAppendingPathComponent:@"ui/index.html"]
