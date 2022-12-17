@@ -546,7 +546,7 @@ static dispatch_queue_t queue = dispatch_queue_create(
   NSString *noInputAccessoryViewClassName =
       [NSString stringWithFormat:@"%@_NoInputAccessoryView", superclass];
 
-  Class newClass = NSClassFromString(noInputAccessoryViewClassName);
+  static Class newClass = NSClassFromString(noInputAccessoryViewClassName);
   if (!newClass) {
     Class targetClass = [target class];
     const char *classNameCString = [noInputAccessoryViewClassName
