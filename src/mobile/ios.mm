@@ -166,7 +166,7 @@ static dispatch_queue_t queue = dispatch_queue_create(
 
 - (void) applicationWillEnterForeground: (UIApplication*) application {
   [self.webview evaluateJavaScript: @"window.focus()" completionHandler: nil];
-  bridge->bluetooth.startScanning();
+  // bridge->bluetooth.startScanning();
 }
 
 - (void) applicationWillTerminate: (UIApplication*) application {
