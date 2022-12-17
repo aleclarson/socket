@@ -216,7 +216,7 @@ static dispatch_queue_t queue = dispatch_queue_create(
     }}
   };
 
-  self.webview.scrollView.scrollEnabled = YES;
+  // self.webview.scrollView.scrollEnabled = YES;
   bridge->router.emit("keyboard", JSON::Object(json).str());
 }
 
@@ -237,7 +237,7 @@ static dispatch_queue_t queue = dispatch_queue_create(
     }}
   };
 
-  self.webview.scrollView.scrollEnabled = NO;
+  // self.webview.scrollView.scrollEnabled = NO;
   bridge->router.emit("keyboard", JSON::Object(json).str());
 }
 
@@ -388,6 +388,7 @@ static dispatch_queue_t queue = dispatch_queue_create(
   self.webview.autoresizingMask = UIViewAutoresizingNone;
   self.webview.translatesAutoresizingMaskIntoConstraints = YES;
   self.webview.scrollView.delegate = self;
+  self.webview.scrollView.scrollEnabled = NO;
 
   [self.webview.configuration.preferences setValue: @YES forKey: @"allowFileAccessFromFileURLs"];
   [self.webview.configuration.preferences setValue: @YES forKey: @"javaScriptEnabled"];
