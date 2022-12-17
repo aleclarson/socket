@@ -303,14 +303,6 @@ static dispatch_queue_t queue = dispatch_queue_create(
     });
   };
 
-  auto appFrame = [[UIScreen mainScreen] bounds];
-
-  self.window = [[UIWindow alloc] initWithFrame: appFrame];
-
-  UIViewController *viewController = [[UIViewController alloc] init];
-  viewController.view.frame = appFrame;
-  self.window.rootViewController = viewController;
-
   NSNotificationCenter* ns = [NSNotificationCenter defaultCenter];
   [ns addObserver: self selector: @selector(keyboardDidShow) name: UIKeyboardDidShowNotification object: nil];
   [ns addObserver: self selector: @selector(keyboardDidHide) name: UIKeyboardDidHideNotification object: nil];
@@ -319,7 +311,6 @@ static dispatch_queue_t queue = dispatch_queue_create(
   [ns addObserver: self selector: @selector(keyboardWillChange:) name: UIKeyboardWillChangeFrameNotification object: nil];
 
   [self setUpWebView];
-  [self.window makeKeyAndVisible];
 
   return YES;
 }
@@ -348,7 +339,8 @@ static dispatch_queue_t queue = dispatch_queue_create(
     );
   }
 
-  CGRect appFrame = self.window.frame;
+  auto appFrame = [[UIScreen mainScreen] bounds];
+
   env << String("width=" + std::to_string(appFrame.size.width) + "&");
   env << String("height=" + std::to_string(appFrame.size.height) + "&");
 
@@ -396,8 +388,7 @@ static dispatch_queue_t queue = dispatch_queue_create(
   self.navDelegate = [[SSCNavigationDelegate alloc] init];
   [self.webview setNavigationDelegate: self.navDelegate];
 
-  UIViewController* viewController = self.window.rootViewController;
-  [viewController.view addSubview: self.webview];
+  [self removeKeyboardInputAccessoryView:self.webview];
 
   NSString* allowed = [[NSBundle mainBundle] resourcePath];
   NSURL* url;
@@ -421,7 +412,13 @@ static dispatch_queue_t queue = dispatch_queue_create(
       allowingReadAccessToURL: [NSURL fileURLWithPath:allowed]];
   }
 
-  [self removeKeyboardInputAccessoryView:self.webview];
+  UIViewController *viewController = [[UIViewController alloc] init];
+  viewController.view.frame = appFrame;
+  [viewController.view addSubview: self.webview];
+
+  self.window = [[UIWindow alloc] initWithFrame: appFrame];
+  self.window.rootViewController = viewController;
+  [self.window makeKeyAndVisible];
 
   if (isDebugEnabled()) {
     self.pingInterval = [NSTimer scheduledTimerWithTimeInterval:5.0
