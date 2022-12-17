@@ -328,8 +328,9 @@ static dispatch_queue_t queue = dispatch_queue_create(
 {
   [self.pingInterval invalidate];
   [self.pongTimeout invalidate];
-  [self.content removeAllUserScripts];
-  self.webview.navigationDelegate = nil;
+  [self.content removeScriptMessageHandlerForName: @"pong"];
+  [self.content removeScriptMessageHandlerForName: @"external"];
+  [self.content removeAllScriptMessageHandlers];
   self.webview.scrollView.delegate = nil;
   [self.webview stopLoading];
   [self.webview removeFromSuperview];
