@@ -116,10 +116,18 @@ static dispatch_queue_t queue = dispatch_queue_create(
     return;
   }
 
-  // Set Access-Control-Allow-Origin response header.
   NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
+
   NSMutableDictionary *headers = [httpResponse.allHeaderFields mutableCopy];
   [headers setValue:@"*" forKey:@"Access-Control-Allow-Origin"];
+  [headers setValue:@"*" forKey:@"Access-Control-Expose-Headers"];
+
+  NSString* setCookieValue = [headers objectForKey:@"Set-Cookie"];
+  if (setCookieValue != nil) {
+    [headers setValue:setCookieValue forKey:@"X-Set-Cookie"];
+  }
+
+
   httpResponse = [[NSHTTPURLResponse alloc] initWithURL:httpResponse.URL
                                              statusCode:httpResponse.statusCode
                                             HTTPVersion:@"HTTP/1.1"
