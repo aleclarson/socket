@@ -90,13 +90,13 @@ static dispatch_queue_t queue = dispatch_queue_create(
   dispatch_async(queue, ^{
     NSURLSessionDataTask *dataTask = [[NSURLSession sharedSession] dataTaskWithRequest:request];
     [self.schemeTasks setObject:schemeTask forKey:dataTask];
-    [self.dataTasks setObject:dataTask forKey:[NSValue valueWithPointer:schemeTask]];
+    [self.dataTasks setObject:dataTask forKey:[NSValue valueWithNonretainedObject:schemeTask]];
     [dataTask setDelegate:self];
     [dataTask resume];
   });
 }
 - (void) webView: (WKWebView*) webView stopURLSchemeTask: (id<WKURLSchemeTask>) schemeTask {
-  NSValue *schemeTaskKey = [NSValue valueWithPointer:schemeTask];
+  NSValue *schemeTaskKey = [NSValue valueWithNonretainedObject:schemeTask];
   NSURLSessionDataTask *dataTask = [_dataTasks objectForKey:schemeTaskKey];
   if (dataTask == nil) {
     return;
@@ -146,7 +146,7 @@ static dispatch_queue_t queue = dispatch_queue_create(
   if (schemeTask == nil) {
     return;
   }
-  [_dataTasks removeObjectForKey:[NSValue valueWithPointer:schemeTask]];
+  [_dataTasks removeObjectForKey:[NSValue valueWithNonretainedObject:schemeTask]];
   [_schemeTasks removeObjectForKey:dataTask];
   if (error == nil) {
     os_log(OS_LOG_DEFAULT, "Success");
