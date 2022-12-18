@@ -181,6 +181,7 @@ static dispatch_queue_t queue = dispatch_queue_create(
 @property (strong, nonatomic) NSTimer* pongTimeout;
 @property (strong, nonatomic) NSTimer* pingInterval;
 @property (nonatomic) BOOL pongAlertVisible;
+@property (nonatomic) BOOL pongReloadDenied;
 @end
 
 //
@@ -224,8 +225,10 @@ static dispatch_queue_t queue = dispatch_queue_create(
        didReceiveScriptMessage: (WKScriptMessage*) scriptMessage
 {
   if ([scriptMessage.name isEqualToString:@"pong"]) {
+    [self.pongTimeout invalidate];
+    [self setPongReloadDenied:NO]; // allow UIAlert to be shown again
+
     // NSLog(@"pong");
-    [_pongTimeout invalidate];
     return;
   }
 
@@ -479,6 +482,9 @@ static dispatch_queue_t queue = dispatch_queue_create(
 
 - (void)webViewBecameUnresponsive
 {
+  if (self.pongReloadDenied) {
+    return;
+  }
   self.pongAlertVisible = YES;
 
   UIAlertController *alert = [UIAlertController
@@ -499,6 +505,7 @@ static dispatch_queue_t queue = dispatch_queue_create(
       [UIAlertAction actionWithTitle:@"Cancel"
                                style:UIAlertActionStyleCancel
                              handler:^(UIAlertAction *_Nonnull action) {
+                               [self setPongReloadDenied:YES];
                                [self setPongAlertVisible:NO];
                              }];
 
