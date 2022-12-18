@@ -29,6 +29,27 @@ static dispatch_queue_t queue = dispatch_queue_create(
 }
 @end
 
+// Trampoline object to avoid retain cycle with the script message handler
+@interface WeakScriptMessageDelegate : NSObject <WKScriptMessageHandler>
+@property(nonatomic, weak) id<WKScriptMessageHandler> scriptDelegate;
+- (instancetype)initWithDelegate:(id<WKScriptMessageHandler>)scriptDelegate;
+@end
+
+@implementation WeakScriptMessageDelegate
+- (instancetype)initWithDelegate:(id<WKScriptMessageHandler>)scriptDelegate {
+  self = [super init];
+  if (self) {
+    _scriptDelegate = scriptDelegate;
+  }
+  return self;
+}
+- (void)userContentController:(WKUserContentController *)userContentController
+      didReceiveScriptMessage:(WKScriptMessage *)message {
+  [self.scriptDelegate userContentController:userContentController
+                     didReceiveScriptMessage:message];
+}
+@end
+
 @interface CorsDisablingURLSchemeHandler : NSObject <WKURLSchemeHandler, NSURLSessionTaskDelegate>
 @property (nonatomic, strong) NSMutableDictionary<NSURLSessionTask *, id<WKURLSchemeTask>> *schemeTasks;
 @property (nonatomic, strong) NSMutableDictionary<NSValue *, NSURLSessionDataTask *> *dataTasks;
@@ -327,10 +348,7 @@ static dispatch_queue_t queue = dispatch_queue_create(
 {
   [self.pingInterval invalidate];
   [self.pongTimeout invalidate];
-  [self.content removeScriptMessageHandlerForName: @"pong"];
-  [self.content removeScriptMessageHandlerForName: @"external"];
-  [self.content removeAllScriptMessageHandlers];
-  self.webview.scrollView.delegate = nil;
+  [self.webview goBack];
   [self.webview stopLoading];
   [self.webview removeFromSuperview];
 
@@ -380,8 +398,9 @@ static dispatch_queue_t queue = dispatch_queue_create(
 
   self.content = [config userContentController];
 
-  [self.content addScriptMessageHandler:self name: @"pong"];
-  [self.content addScriptMessageHandler:self name: @"external"];
+  WeakScriptMessageDelegate* messageHandler = [[WeakScriptMessageDelegate alloc] initWithDelegate:self];
+  [self.content addScriptMessageHandler:messageHandler name: @"pong"];
+  [self.content addScriptMessageHandler:messageHandler name: @"external"];
   [self.content addUserScript: initScript];
 
   self.webview = [[SSCBridgedWebView alloc] initWithFrame:appFrame configuration: config];
