@@ -29,6 +29,26 @@
     #pragma clang diagnostic pop
   }
 }
+#if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
+- (void)webView:(WKWebView *)webView
+    didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge
+                    completionHandler:
+                        (void (^)(NSURLSessionAuthChallengeDisposition,
+                                  NSURLCredential *_Nullable))
+                            completionHandler 
+{
+  if (SSC::isDebugEnabled()) {
+    SecTrustRef serverTrust = challenge.protectionSpace.serverTrust;
+    CFDataRef exceptions = SecTrustCopyExceptions(serverTrust);
+    SecTrustSetExceptions(serverTrust, exceptions);
+    CFRelease(exceptions);
+    completionHandler(NSURLSessionAuthChallengeUseCredential,
+                      [NSURLCredential credentialForTrust:serverTrust]);
+  } else {
+    completionHandler(NSURLSessionAuthChallengePerformDefaultHandling, NULL);
+  }
+}
+#endif
 @end
 
 #if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR

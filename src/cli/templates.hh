@@ -433,6 +433,7 @@ constexpr auto gXCodeProject = R"ASCII(// !$*UTF8*$!
 		2996EDB22770BC1F00C672A2 /* Network.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2996EDB12770BC1F00C672A2 /* Network.framework */; };
 		2996EDB22770BC1F00C672A3 /* CoreBluetooth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2996EDB12770BC1F00C672A3 /* CoreBluetooth.framework */; };
 		2996EDB22770BC1F00C672A4 /* UserNotifications.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2996EDB12770BC1F00C672A4 /* UserNotifications.framework */; };
+		70C44D452953C6CA007A4FD2 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 70C44D442953C6CA007A4FD2 /* Security.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -455,6 +456,7 @@ constexpr auto gXCodeProject = R"ASCII(// !$*UTF8*$!
 		2996EDB12770BC1F00C672A2 /* Network.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Network.framework; path = System/Library/Frameworks/Network.framework; sourceTree = SDKROOT; };
 		2996EDB12770BC1F00C672A3 /* CoreBluetooth.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreBluetooth.framework; path = System/Library/Frameworks/CoreBluetooth.framework; sourceTree = SDKROOT; };
 		2996EDB12770BC1F00C672A4 /* UserNotifications.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UserNotifications.framework; path = System/Library/Frameworks/UserNotifications.framework; sourceTree = SDKROOT; };
+		70C44D442953C6CA007A4FD2 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -465,6 +467,7 @@ constexpr auto gXCodeProject = R"ASCII(// !$*UTF8*$!
 				17A7F8F529358D430051D146 /* libsocket-runtime.a in Frameworks */,
 				17A7F8F629358D430051D146 /* libuv.a in Frameworks */,
 				17A7F8F729358D4D0051D146 /* ios.o in Frameworks */,
+				70C44D452953C6CA007A4FD2 /* Security.framework in Frameworks */,
 				17C230BA28E9398700301440 /* Foundation.framework in Frameworks */,
 				2996EDB22770BC1F00C672A2 /* Network.framework in Frameworks */,
 				2996EDB22770BC1F00C672A3 /* CoreBluetooth.framework in Frameworks */,
@@ -524,6 +527,7 @@ constexpr auto gXCodeProject = R"ASCII(// !$*UTF8*$!
 				17A7F8F329358D430051D146 /* libsocket-runtime.a */,
 				17A7F8F429358D430051D146 /* libuv.a */,
 				17E73FEE28FCD3360087604F /* libuv-ios.a */,
+				70C44D442953C6CA007A4FD2 /* Security.framework */,
 				17C230B928E9398700301440 /* Foundation.framework */,
 				2996EDB12770BC1F00C672A2 /* Network.framework */,
 				2996EDB12770BC1F00C672A3 /* CoreBluetooth.framework */,
