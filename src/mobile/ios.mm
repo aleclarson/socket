@@ -401,6 +401,7 @@ static dispatch_queue_t queue = dispatch_queue_create(
     forMainFrameOnly: NO];
 
   WKWebViewConfiguration *config = [[WKWebViewConfiguration alloc] init];
+  config.limitsNavigationsToAppBoundDomains = YES;
 
   [config setURLSchemeHandler: [CorsDisablingURLSchemeHandler new] forURLScheme: @"cors-http"];
   [config setURLSchemeHandler: [CorsDisablingURLSchemeHandler new] forURLScheme: @"cors-https"];
