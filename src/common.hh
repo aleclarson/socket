@@ -126,6 +126,10 @@
 #define SSC_VERSION_HASH ""
 #endif
 
+#ifndef PROTOCOL
+#define PROTOCOL "http"
+#endif
+
 #ifndef HOST
 #define HOST "localhost"
 #endif
@@ -190,6 +194,7 @@ namespace SSC {
     }
   #endif
 
+  const char* getDevProtocol ();
   const char* getDevHost ();
   int getDevPort ();
 

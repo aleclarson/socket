@@ -433,9 +433,10 @@ static dispatch_queue_t queue = dispatch_queue_create(
   int port = getDevPort();
 
   if (isDebugEnabled() && port > 0 && getDevHost() != nullptr) {
+    NSString* protocol = [NSString stringWithUTF8String:getDevProtocol()];
     NSString* host = [NSString stringWithUTF8String:getDevHost()];
     url = [NSURL
-      URLWithString: [NSString stringWithFormat: @"http://%@:%d/", host, port]
+      URLWithString: [NSString stringWithFormat: @"%@://%@:%d/", protocol, host, port]
     ];
 
     [self.webview loadRequest: [NSURLRequest requestWithURL: url]];

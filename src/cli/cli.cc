@@ -773,7 +773,7 @@ int main (const int argc, const char* argv[]) {
     exit(0);
   });
 
-  createSubcommand("build", { "--platform", "--host", "--port", "--quiet", "-o", "-r", "--prod", "-p", "-c", "-s", "-e", "-n", "--test", "--headless" }, true, [&](const std::span<const char *>& options) -> void {
+  createSubcommand("build", { "--platform", "--host", "--port", "--https", "--quiet", "-o", "-r", "--prod", "-p", "-c", "-s", "-e", "-n", "--test", "--headless" }, true, [&](const std::span<const char *>& options) -> void {
     bool flagRunUserBuildOnly = false;
     bool flagAppStore = false;
     bool flagCodeSign = false;
@@ -791,6 +791,7 @@ int main (const int argc, const char* argv[]) {
     String argvForward = "";
     String targetPlatform = "";
 
+    String devProtocol("http");
     String devHost("localhost");
     String devPort("0");
     auto cnt = 0;
@@ -870,6 +871,10 @@ int main (const int argc, const char* argv[]) {
             flagBuildForSimulator = true;
           }
         }
+      }
+
+      if (is(arg, "--https")) {
+        devProtocol = "https";
       }
 
       auto host = optionValue(arg, "--host");
@@ -1483,6 +1488,7 @@ int main (const int argc, const char* argv[]) {
         fs::copy_options::overwrite_existing | fs::copy_options::recursive
       );
 
+      settings.insert(std::make_pair("protocol", devProtocol));
       settings.insert(std::make_pair("host", devHost));
       settings.insert(std::make_pair("port", devPort));
 
@@ -2018,6 +2024,7 @@ int main (const int argc, const char* argv[]) {
         << " -DIOS=" << (flagBuildForIOS ? 1 : 0)
         << " -DANDROID=" << (flagBuildForAndroid ? 1 : 0)
         << " -DDEBUG=" << (flagDebugMode ? 1 : 0)
+        << " -DPROTOCOL=" << devProtocol
         << " -DHOST=" << devHost
         << " -DPORT=" << devPort
         << " -DSSC_SETTINGS=\"" << encodeURIComponent(_settings) << "\""

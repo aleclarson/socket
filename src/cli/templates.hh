@@ -762,6 +762,7 @@ constexpr auto gXCodeProject = R"ASCII(// !$*UTF8*$!
         LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/lib";
         MARKETING_VERSION = 1.0;
         OTHER_CFLAGS = (
+          "-DPROTOCOL={{protocol}}",
           "-DHOST={{host}}",
           "-DPORT={{port}}",
         );
