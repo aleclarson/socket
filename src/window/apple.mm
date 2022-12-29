@@ -756,10 +756,20 @@ namespace SSC {
   }
 
   void Window::navigate (const SSC::String& seq, const SSC::String& value) {
-    [webview loadRequest:
-      [NSURLRequest requestWithURL:
-        [NSURL URLWithString:
-          [NSString stringWithUTF8String: value.c_str()]]]];
+    NSURL* url;
+
+    int port = getDevPort();
+    if (isDebugEnabled() && port > 0 && getDevHost() != nullptr) {
+      NSString *protocol = [NSString stringWithUTF8String:getDevProtocol()];
+      NSString *host = [NSString stringWithUTF8String:getDevHost()];
+      url = [NSURL
+          URLWithString:[NSString stringWithFormat:@"%@://%@:%d/", protocol,
+                                                   host, port]];
+    } else {
+      url = [NSURL URLWithString:[NSString stringWithUTF8String:value.c_str()]];
+    }
+
+    [webview loadRequest: [NSURLRequest requestWithURL: url]];
 
     if (seq.size() > 0) {
       auto index = std::to_string(this->opts.index);
