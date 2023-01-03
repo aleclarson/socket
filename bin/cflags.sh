@@ -51,6 +51,7 @@ if (( TARGET_OS_IPHONE )) || (( TARGET_IPHONE_SIMULATOR )); then
     cflags+=("-mios-simulator-version-min=$IPHONEOS_VERSION_MIN")
   fi
 
+  cflags+=("-fobjc-arc")
   cflags+=("-iframeworkwithsysroot /System/Library/Frameworks")
   cflags+=("-isysroot $ios_sdk_path/")
   cflags+=("-F $ios_sdk_path/System/Library/Frameworks/")
@@ -72,6 +73,7 @@ fi
 if (( !TARGET_OS_ANDROID && !TARGET_ANDROID_EMULATOR )); then
   if [[ "$(uname -s)" = "Darwin" ]]; then
     cflags+=("-ObjC++")
+    cflags+=("-DOBJC_OLD_DISPATCH_PROTOTYPES=1")
   elif [[ "$(uname -s)" = "Linux" ]]; then
     cflags+=($(pkg-config --cflags --static gtk+-3.0 webkit2gtk-4.1))
   fi

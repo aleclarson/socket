@@ -56,7 +56,6 @@ while (( $# > 0 )); do
 done
 
 if [[ "$(uname -s)" = "Darwin" ]]; then
-  cflags+=("-ObjC++")
   sources+=("$root/src/window/apple.mm")
   if (( TARGET_OS_IPHONE)); then
     clang="xcrun -sdk iphoneos $clang"

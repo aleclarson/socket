@@ -175,7 +175,7 @@ function _prebuild_ios_main () {
   local objects="$BUILD_DIR/$arch-$platform/objects"
 
   local clang="$(xcrun -sdk iphoneos -find clang++)"
-  local cflags=($(TARGET_OS_IPHONE=1 "$root/bin/cflags.sh" -fobjc-arc))
+  local cflags=($(TARGET_OS_IPHONE=1 "$root/bin/cflags.sh"))
   local sources=($(find "$src"/mobile/ios.mm 2>/dev/null))
   local outputs=()
 
