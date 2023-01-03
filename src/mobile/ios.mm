@@ -717,10 +717,16 @@ static dispatch_queue_t queue = dispatch_queue_create(
   [self.window makeKeyAndVisible];
 
   if (isDebugEnabled()) {
-    self.pingInterval = [NSTimer scheduledTimerWithTimeInterval:5.0
-                                                        target:self
-                                                      selector:@selector(ping)
-                                                      userInfo:nil
+    [self
+        runJavaScript:
+            @"window.ping = () => webkit.messageHandlers.pong.postMessage({});"
+            inWebview:self.webview
+            atDocumentStart:YES];
+
+    self.pingInterval = [NSTimer scheduledTimerWithTimeInterval:3.0
+                                                         target:self
+                                                       selector:@selector(ping)
+                                                       userInfo:nil
                                                         repeats:YES];
   }
 }
@@ -730,7 +736,7 @@ static dispatch_queue_t queue = dispatch_queue_create(
   if (self.pongAlertVisible) {
     return;
   }
-  self.pongTimeout = [NSTimer scheduledTimerWithTimeInterval:2.0
+  self.pongTimeout = [NSTimer scheduledTimerWithTimeInterval:1.0
                                                       target:self
                                                     selector:@selector(webViewBecameUnresponsive)
                                                     userInfo:nil
