@@ -1492,6 +1492,9 @@ int main (const int argc, const char* argv[]) {
       settings.insert(std::make_pair("host", devHost));
       settings.insert(std::make_pair("port", devPort));
 
+      settings.insert(std::make_pair("xcodeBuildConfiguration", flagDebugMode ? "Debug" : "Release"));
+      settings.insert(std::make_pair("xcodeDebuggerIdentifier", flagBuildForSimulator ? "Xcode.DebuggerFoundation.Debugger.LLDB" : ""));
+
       writeFile(paths.platformSpecificOutputPath / "exportOptions.plist", tmpl(gXCodeExportOptions, settings));
       writeFile(paths.platformSpecificOutputPath / "Info.plist", tmpl(gXCodePlist, settings));
       writeFile(pathToProject / "project.pbxproj", tmpl(gXCodeProject, settings));

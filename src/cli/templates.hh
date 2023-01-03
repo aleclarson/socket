@@ -1305,8 +1305,8 @@ constexpr auto gXCodeScheme = R"XML(<?xml version="1.0" encoding="UTF-8"?>
       </Testables>
    </TestAction>
    <LaunchAction
-      buildConfiguration = "Debug"
-      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+      buildConfiguration = "{{xcodeBuildConfiguration}}"
+      selectedDebuggerIdentifier = "{{xcodeDebuggerIdentifier}}"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "NO"
