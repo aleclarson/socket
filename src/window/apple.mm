@@ -1,4 +1,33 @@
 #include "window.hh"
+#import <WebKit/WebKit.h>
+#import <objc/message.h>
+
+#if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
+#define SSC_APP_DELEGATE(name) id<UIApplicationDelegate> name = [UIApplication sharedApplication].delegate
+#else
+#define SSC_APP_DELEGATE(name) id<NSApplicationDelegate> name = [NSApplication sharedApplication].delegate
+#endif
+
+void invokeMethodWithArgs(id self, NSString *methodName, ...) {
+  NSInvocation *invocation = [NSInvocation
+      invocationWithMethodSignature:
+          [self methodSignatureForSelector:NSSelectorFromString(methodName)]];
+
+  [invocation setTarget:self];
+  [invocation setSelector:NSSelectorFromString(methodName)];
+
+  va_list args;
+  va_start(args, methodName);
+  int index = 2;
+  id arg = nil;
+  while ((arg = va_arg(args, id))) {
+    [invocation setArgument:&arg atIndex:index];
+    index++;
+  }
+  va_end(args);
+
+  [invocation invoke];
+}
 
 @implementation SSCNavigationDelegate
 - (void) webview: (SSCBridgedWebView*) webview
@@ -14,19 +43,34 @@
     decisionHandler(WKNavigationActionPolicyAllow);
   }
 }
+- (void)webView:(WKWebView *)webView decidePolicyForNavigationResponse:(WKNavigationResponse *)navigationResponse decisionHandler:(void (^)(WKNavigationResponsePolicy))decisionHandler
+{
+  SSC_APP_DELEGATE(appDelegate);
+  if ([appDelegate respondsToSelector:@selector(webView:decidePolicyForNavigationResponse:decisionHandler:)]) {
+    invokeMethodWithArgs(appDelegate, @"webView:decidePolicyForNavigationResponse:decisionHandler:", webView, navigationResponse, decisionHandler, nil);
+  } else {
+    decisionHandler(WKNavigationResponsePolicyAllow);
+  }
+}
+- (void)webView:(WKWebView *)webView didStartProvisionalNavigation:(WKNavigation *)navigation
+{
+  SSC_APP_DELEGATE(appDelegate);
+  if ([appDelegate respondsToSelector:@selector(webView:didStartProvisionalNavigation:)]) {
+    invokeMethodWithArgs(appDelegate, @"webView:didStartProvisionalNavigation:", webView, navigation, nil);
+  }
+}
+- (void)webView:(WKWebView *)webView didCommitNavigation:(WKNavigation *)navigation
+{
+  SSC_APP_DELEGATE(appDelegate);
+  if ([appDelegate respondsToSelector:@selector(webView:didCommitNavigation:)]) {
+    invokeMethodWithArgs(appDelegate, @"webView:didCommitNavigation:", webView, navigation, nil);
+  }
+}
 - (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView
 {
-#if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
-  id<UIApplicationDelegate> appDelegate = [UIApplication sharedApplication].delegate;
-#else
-  id<NSApplicationDelegate> appDelegate = [NSApplication sharedApplication].delegate;
-#endif
-
+  SSC_APP_DELEGATE(appDelegate);
   if ([appDelegate respondsToSelector:@selector(webViewWebContentProcessDidTerminate:)]) {
-    #pragma clang diagnostic push
-    #pragma clang diagnostic ignored "-Wobjc-method-access"
-    [appDelegate webViewWebContentProcessDidTerminate:webView];
-    #pragma clang diagnostic pop
+    invokeMethodWithArgs(appDelegate, @"webViewWebContentProcessDidTerminate:", webView, nil);
   }
 }
 #if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR

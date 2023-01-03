@@ -178,6 +178,8 @@ static dispatch_queue_t queue = dispatch_queue_create(
 @property (strong, nonatomic) SSCNavigationDelegate* navDelegate;
 @property (strong, nonatomic) SSCBridgedWebView* webview;
 @property (strong, nonatomic) WKUserContentController* content;
+@property (strong, nonatomic) NSMutableDictionary<NSString*, WKWebView*>* childWebviews;
+@property (strong, nonatomic) NSMapTable<WKWebView*, NSDictionary*>* childWebviewArgs;
 @property (strong, nonatomic) NSTimer* pongTimeout;
 @property (strong, nonatomic) NSTimer* pingInterval;
 @property (nonatomic) BOOL pongAlertVisible;
@@ -217,6 +219,95 @@ static dispatch_queue_t queue = dispatch_queue_create(
   });
 }
 
+- (void)forwardMessage:(id)message forChildWebview:(WKWebView *)childWebview
+{
+  NSString *webviewId =
+      [self.childWebviews allKeysForObject:childWebview].firstObject;
+
+  if (webviewId == nil) {
+    return;
+  }
+    
+  NSLog(@"Forwarding message from child webview: %@", @{ @"url": childWebview.URL.absoluteString, @"message": message });
+
+  NSString *data = [[NSString alloc]
+      initWithData:[NSJSONSerialization dataWithJSONObject:@[message]
+                                                   options:0
+                                                     error:nil]
+          encoding:NSUTF8StringEncoding];
+
+  NSString *script = [NSString
+      stringWithFormat:@"window.childWebviews[\"%@\"].onmessage( \n"
+                       @"  new MessageEvent('message', {         \n"
+                       @"    data: %@[0],                        \n"
+                       @"  })                                    \n"
+                       @");",
+                       webviewId, data];
+
+  [self.webview evaluateJavaScript:script completionHandler:nil];
+}
+
+- (void)openChildWebview:(NSDictionary *)args
+{
+  WKWebViewConfiguration *config = [[WKWebViewConfiguration alloc] init];
+  config.websiteDataStore = [WKWebsiteDataStore defaultDataStore];
+
+  WKWebView* webview = [[WKWebView alloc] initWithFrame:self.window.bounds configuration:config];
+  webview.navigationDelegate = self.navDelegate;
+  webview.backgroundColor = [UIColor clearColor];
+  webview.allowsBackForwardNavigationGestures = YES;
+  webview.customUserAgent = @"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/109.0";
+
+  [self.window.rootViewController.view addSubview:webview];
+  [self.childWebviews setObject:webview forKey:args[@"id"]];
+  [self.childWebviewArgs setObject:args forKey:webview];
+
+  WeakScriptMessageDelegate* messageHandler = [[WeakScriptMessageDelegate alloc] initWithDelegate:self];
+
+  auto content = webview.configuration.userContentController;
+  [content addScriptMessageHandler:messageHandler name: @"webview"];
+
+  [webview loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:args[@"url"]]]];
+}
+
+- (void)closeChildWebview:(NSString *)webviewId
+{
+  WKWebView* childWebview = self.childWebviews[webviewId];
+  [self.childWebviews removeObjectForKey:webviewId];
+  [self.childWebviewArgs removeObjectForKey:childWebview];
+
+  [childWebview goBack];
+  [childWebview stopLoading];
+  [childWebview removeFromSuperview];
+}
+
+- (void)readCookiesForChildWebview:(NSString *)webviewId
+{
+  WKWebView *webview = self.childWebviews[webviewId];
+  [webview.configuration.websiteDataStore
+          .httpCookieStore getAllCookies:^(NSArray<NSHTTPCookie *> *cookies) {
+    NSMutableArray<NSMutableDictionary *> *filteredCookies =
+        [NSMutableArray new];
+
+    for (NSHTTPCookie *cookie in cookies) {
+      if ([webview.URL.host isEqualToString:cookie.domain] ||
+          ([cookie.domain hasPrefix:@"."] &&
+           ([webview.URL.host hasSuffix:cookie.domain] ||
+            [webview.URL.host
+                isEqualToString:[cookie.domain substringFromIndex:1]]))) {
+        NSMutableDictionary *cookieProps = [cookie.properties mutableCopy];
+        cookieProps[NSHTTPCookieExpires] =
+            @([cookieProps[NSHTTPCookieExpires] timeIntervalSince1970]);
+
+        [filteredCookies addObject:cookieProps];
+      }
+    }
+
+    [self forwardMessage:@{@"type" : @"cookies", @"cookies" : filteredCookies}
+         forChildWebview:webview];
+  }];
+}
+
 //
 // When a message is received try to route it.
 // Messages may also be received and routed via the custom scheme handler.
@@ -229,6 +320,36 @@ static dispatch_queue_t queue = dispatch_queue_create(
     [self setPongReloadDenied:NO]; // allow UIAlert to be shown again
 
     // NSLog(@"pong");
+    return;
+  }
+
+  if ([scriptMessage.name isEqualToString:@"webview"]) {
+    WKWebView* webview = scriptMessage.webView;
+    NSDictionary* body = scriptMessage.body;
+
+    // Receive a "ssc.postMessage" call from child webview.
+    if (self.webview != webview) {
+      [self forwardMessage:body forChildWebview:webview];
+    }
+
+    // Handle an "openChildWebview" call from main webview.
+    else if ([body[@"method"] isEqualToString:@"open"]) {
+      [self openChildWebview:body];
+    }
+
+    else if ([body[@"method"] isEqualToString:@"close"]) {
+      [self closeChildWebview:body[@"id"]];
+    }
+
+    else if ([body[@"method"] isEqualToString:@"evaluate"]) {
+      WKWebView* childWebview = self.childWebviews[body[@"id"]];
+      [self runJavaScript:body[@"js"] inWebview:childWebview atDocumentStart:NO];
+    }
+
+    else if ([body[@"method"] isEqualToString:@"cookies"]) {
+      [self readCookiesForChildWebview:body[@"id"]];
+    }
+
     return;
   }
 
@@ -342,26 +463,107 @@ static dispatch_queue_t queue = dispatch_queue_create(
   [ns addObserver: self selector: @selector(keyboardWillHide) name: UIKeyboardWillHideNotification object: nil];
   [ns addObserver: self selector: @selector(keyboardWillChange:) name: UIKeyboardWillChangeFrameNotification object: nil];
 
-  [self setUpWebView];
+  [self setupWebview];
   [self keyboardDisplayDoesNotRequireUserAction];
 
   return YES;
 }
 
-- (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView
+- (void)webView:(WKWebView *)webview
+    didCommitNavigation:(WKNavigation *)navigation
 {
-  if (webView == self.webview) {
-    [self setUpWebView];
+  if (webview == self.webview) {
+    if (self.pongAlertVisible) {
+      [self setPongAlertVisible:NO];
+      [self.window.rootViewController dismissViewControllerAnimated:YES completion:nil];
+    }
+    for (WKWebView* childWebview in self.childWebviews.allValues) {
+      [childWebview goBack];
+      [childWebview stopLoading];
+      [childWebview removeFromSuperview];
+    }
+    [self.childWebviews removeAllObjects];
+    [self.childWebviewArgs removeAllObjects];
+  } else {
+    // Allow communication back to the main webview.
+    [self runJavaScript:
+              @"window.ssc = {                                              \n"
+              @"  postMessage(msg = {}) {                                   \n"
+              @"    return webkit.messageHandlers.webview.postMessage(msg); \n"
+              @"  }                                                         \n"
+              @"};"
+              inWebview:webview
+              atDocumentStart:NO];
+
+    NSString* url = webview.URL.absoluteString;
+    NSDictionary* args = [self.childWebviewArgs objectForKey:webview];
+    for (NSDictionary* entry in args[@"scripts"]) {
+      NSRegularExpression *matcher =
+          [NSRegularExpression regularExpressionWithPattern:entry[@"match"]
+                                                    options:0
+                                                      error:nil];
+
+      if ([matcher numberOfMatchesInString:url
+                                   options:0
+                                     range:NSMakeRange(0, url.length)] > 0) {
+        [self runJavaScript:entry[@"script"]
+                  inWebview:webview
+            atDocumentStart:NO];
+      }
+    }
+
+    // Notify the main webview of the navigation.
+    [self forwardMessage:@{
+      @"type" : @"navigate",
+      @"url" : webview.URL.absoluteString,
+    }
+         forChildWebview:webview];
   }
 }
 
-- (void)setUpWebView
+- (void)webViewWebContentProcessDidTerminate:(WKWebView *)webview
+{
+  if (webview == self.webview) {
+    [self setupWebview];
+  }
+}
+
+- (void)runJavaScript:(NSString *)source
+            inWebview:(WKWebView *)webview
+      atDocumentStart:(BOOL)atDocumentStart 
+{
+  NSLog(@"Running script: %@", source);
+  WKUserScript *script = [[WKUserScript alloc]
+        initWithSource:source
+         injectionTime:atDocumentStart
+                           ? WKUserScriptInjectionTimeAtDocumentStart
+                           : WKUserScriptInjectionTimeAtDocumentEnd
+      forMainFrameOnly:NO];
+
+  [webview.configuration.userContentController addUserScript: script];
+}
+
+- (void)tearDownWebview
 {
   [self.pingInterval invalidate];
   [self.pongTimeout invalidate];
   [self.webview goBack];
   [self.webview stopLoading];
   [self.webview removeFromSuperview];
+
+  for (WKWebView* childWebview in self.childWebviews.allValues) {
+    [childWebview goBack];
+    [childWebview stopLoading];
+    [childWebview removeFromSuperview];
+  }
+}
+
+- (void)setupWebview
+{
+  [self tearDownWebview];
+
+  self.childWebviews = [NSMutableDictionary new];
+  self.childWebviewArgs = [NSMapTable new];
 
   auto appData = parseConfig(decodeURIComponent(_settings));
 
@@ -391,15 +593,6 @@ static dispatch_queue_t queue = dispatch_queue_create(
     .cwd = String([cwd UTF8String])
   };
 
-  // Note: you won't see any logs in the preload script before the
-  // Web Inspector is opened
-  String  preload = ToString(createPreload(opts));
-
-  WKUserScript* initScript = [[WKUserScript alloc]
-    initWithSource: [NSString stringWithUTF8String: preload.c_str()]
-    injectionTime: WKUserScriptInjectionTimeAtDocumentStart
-    forMainFrameOnly: NO];
-
   WKWebViewConfiguration *config = [[WKWebViewConfiguration alloc] init];
   config.allowsInlineMediaPlayback = YES;
   config.mediaTypesRequiringUserActionForPlayback = WKAudiovisualMediaTypeNone;
@@ -414,14 +607,77 @@ static dispatch_queue_t queue = dispatch_queue_create(
 
   WeakScriptMessageDelegate* messageHandler = [[WeakScriptMessageDelegate alloc] initWithDelegate:self];
   [self.content addScriptMessageHandler:messageHandler name: @"pong"];
+  [self.content addScriptMessageHandler:messageHandler name: @"webview"];
   [self.content addScriptMessageHandler:messageHandler name: @"external"];
-  [self.content addUserScript: initScript];
 
   self.webview = [[SSCBridgedWebView alloc] initWithFrame:appFrame configuration: config];
-  self.webview.autoresizingMask = UIViewAutoresizingNone;
-  self.webview.translatesAutoresizingMaskIntoConstraints = YES;
   self.webview.scrollView.delegate = self;
   self.webview.scrollView.scrollEnabled = NO;
+
+  // Note: you won't see any logs in the preload script before the
+  // Web Inspector is opened
+  String  preload = ToString(createPreload(opts));
+  [self runJavaScript:[NSString stringWithUTF8String:preload.c_str()]
+            inWebview:self.webview
+      atDocumentStart:YES];
+
+  [self
+      runJavaScript:@"(function() {                                         \n"
+                    @"  let nextId = 1;                                     \n"
+                    @"  window.childWebviews = {};                          \n"
+                    @"  window.openChildWebview = (config) => {             \n"
+                    @"    const parent = webkit.messageHandlers.webview;    \n"
+                    @"    parent.call = (method, id, config) => {           \n"
+                    @"      parent.postMessage({                            \n"
+                    @"        ...config,                                    \n"
+                    @"        id,                                           \n"
+                    @"        method,                                       \n"
+                    @"      });                                             \n"
+                    @"    };                                                \n"
+                    @"                                                      \n"
+                    @"    let scripts;                                      \n"
+                    @"    if (config.scripts) {                             \n"
+                    @"      scripts = config.scripts.map(entry => ({        \n"
+                    @"        match: entry.match.source,                    \n"
+                    @"        script: [                                     \n"
+                    @"          '(function() {',                            \n"
+                    @"          ...entry.script,                            \n"
+                    @"          '})();',                                    \n"
+                    @"          '//# sourceURL=' + entry.name,              \n"
+                    @"        ].join('\\n'),                                \n"
+                    @"      }));                                            \n"
+                    @"    }                                                 \n"
+                    @"                                                      \n"
+                    @"    const id = nextId++;                              \n"
+                    @"    parent.call('open', id, {                         \n"
+                    @"      ...config,                                      \n"
+                    @"      scripts,                                        \n"
+                    @"    });                                               \n"
+                    @"                                                      \n"
+                    @"    return (window.childWebviews[id] = {              \n"
+                    @"      onmessage() {},                                 \n"
+                    @"      evaluate(...lines) {                            \n"
+                    @"        const url = `webview-${id}_${Date.now()}.js`; \n"
+                    @"        const js = [                                  \n"
+                    @"          '(function() {',                            \n" 
+                    @"          ...lines,                                   \n"
+                    @"          '})();',                                    \n" 
+                    @"          '//# sourceURL=' + url,                     \n"
+                    @"        ].join('\\n');                                \n"
+                    @"        parent.call('evaluate', id, { js });          \n"
+                    @"      },                                              \n"
+                    @"      requestCookies() {                              \n"
+                    @"        parent.call('cookies', id);                   \n"
+                    @"      },                                              \n"
+                    @"      close() {                                       \n"
+                    @"        delete window.childWebviews[id];              \n"
+                    @"        parent.call('close', id);                     \n"
+                    @"      },                                              \n"
+                    @"    });                                               \n"
+                    @"  };                                                  \n"
+                    @"})();"
+          inWebview:self.webview
+          atDocumentStart:YES];
 
   [self.webview.configuration.preferences setValue: @YES forKey: @"allowFileAccessFromFileURLs"];
   [self.webview.configuration.preferences setValue: @YES forKey: @"javaScriptEnabled"];
@@ -502,7 +758,7 @@ static dispatch_queue_t queue = dispatch_queue_create(
                                style:UIAlertActionStyleDefault
                              handler:^(UIAlertAction *_Nonnull action) {
                                [self setPongAlertVisible:NO];
-                               [self setUpWebView];
+                               [self setupWebview];
                              }];
 
   UIAlertAction *cancelAction =
