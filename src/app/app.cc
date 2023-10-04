@@ -125,6 +125,18 @@ namespace SSC {
       }
     );
 #elif defined(__APPLE__)
+    static void *mainQueueKey = &mainQueueKey;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+      dispatch_queue_set_specific(dispatch_get_main_queue(), mainQueueKey, mainQueueKey, NULL);
+    });
+
+    // If we're on the main queue already, just call the callback directly.
+    if (dispatch_get_specific(mainQueueKey) == mainQueueKey) {
+      callback();
+      return;
+    }
+ 
     auto priority = DISPATCH_QUEUE_PRIORITY_DEFAULT;
     auto queue = dispatch_get_global_queue(priority, 0);
 
