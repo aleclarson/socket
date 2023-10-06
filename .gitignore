@@ -57,3 +57,11 @@ build/
 *.mobileprovision
 dist/
 *.o
+
+# CMakeLists.txt artifacts
+src/.cache/
+src/CMakeCache.txt
+src/CMakeFiles/
+src/Makefile
+src/cmake_install.cmake
+src/compile_commands.json
