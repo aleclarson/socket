@@ -14,7 +14,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS
     ON
     CACHE INTERNAL "")
 
-file(GLOB CORE_SRC ${CMAKE_SOURCE_DIR}/core/*.cc ${CMAKE_SOURCE_DIR}/common.hh)
+file(GLOB CORE_SRC ${CMAKE_SOURCE_DIR}/core/*.cc)
 
 file(GLOB APP_SRC ${CMAKE_SOURCE_DIR}/app/*.cc
      ${CMAKE_SOURCE_DIR}/extension/*.cc ${CMAKE_SOURCE_DIR}/ipc/*.cc
