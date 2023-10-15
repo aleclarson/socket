@@ -25,13 +25,15 @@ bool sapi_ipc_router_map (
     auto reply
   ) mutable {
     auto msg = SSC::IPC::Message(message);
-    auto context = sapi_context_create(ctx, true);
+    auto context = new sapi_context_t(ctx);
     if (context == nullptr) {
       return;
     }
 
     context->data = data;
     context->internal = new SSC::IPC::Router::ReplyCallback(reply);
+    context->retain();
+
     callback(
       context,
       (sapi_ipc_message_t*) &msg,
